@@ -1,0 +1,5 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "ESP01S_ProMini")(type "KiCad")(uri "C:/Users/Fred/Downloads/ESP01S_ProMini.kicad_sym")(options "")(descr ""))
+  (lib (name "SafetyHomesSideOnly")(type "KiCad")(uri "C:/Users/Fred/Downloads/SafetyHomesSideOnly.kicad_sym")(options "")(descr ""))
+)

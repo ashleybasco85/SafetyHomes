@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Safety Homes</title>
+    <style>
+        :root {
+            --bg-color: #f8fafc; --card-bg: #ffffff; --text-main: #0f172a;
+            --text-muted: #64748b; --accent: #0284c7; --border: #e2e8f0;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05);
+        }
+        html { scroll-behavior: smooth; }
+        body { margin: 0; font-family: -apple-system, sans-serif; background: var(--bg-color); color: var(--text-main); display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .fade-in { opacity: 0; animation: fadeInUp 0.6s ease-out forwards; }
+        .delay-1 { animation-delay: 0.1s; } .delay-2 { animation-delay: 0.2s; }
+        .delay-3 { animation-delay: 0.3s; } .delay-4 { animation-delay: 0.4s; } .delay-5 { animation-delay: 0.5s; }
+
+        #global-loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-color); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .spinner { width: 50px; height: 50px; border: 5px solid #e2e8f0; border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 1.5rem; }
+
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(248, 250, 252, 0.95); z-index: 2000; display: none; flex-direction: column; align-items: center; justify-content: center; }
+        .modal-box { background: var(--card-bg); padding: 3rem; border-radius: 12px; box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1); border: 1px solid var(--border); text-align: center; width: 300px; }
+        .modal-box input { padding: 0.75rem; margin: 0.5rem 0 1.5rem 0; width: 90%; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box; }
+        .modal-box label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); text-align: left; display: block; margin-left: 5%; }
+        
+        .navbar { position: fixed; top: 0; width: 100%; background: rgba(255,255,255,0.9); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; padding: 1rem 2rem; box-sizing: border-box; z-index: 1000; }
+        .nav-logo { font-weight: 800; font-size: 1.2rem; color: var(--text-main); text-decoration: none; display: flex; align-items: center; }
+        .nav-links { display: flex; align-items: center; gap: 1.5rem; list-style: none; margin: 0; padding: 0; }
+        .nav-links a { display: flex; align-items: center; gap: 0.3rem; text-decoration: none; color: var(--text-muted); font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .nav-links a:hover { color: var(--accent); }
+        
+        .container { max-width: 900px; padding: 7rem 2rem 3rem 2rem; text-align: center; width: 100%; box-sizing: border-box; display: none; }
+        h1 { font-size: 3.5rem; font-weight: 800; margin-bottom: 0.5rem; }
+        .tagline { font-size: 1.25rem; color: var(--text-muted); margin-bottom: 2rem; }
+        .intro-box, .dashboard-box, .database-box, .contact-box { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 2rem; margin-bottom: 3rem; box-shadow: var(--shadow); text-align: left; }
+        h2 { color: var(--accent); margin-top: 0; margin-bottom: 0.75rem; }
+        
+        .sensors-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; text-align: left; margin-bottom: 3rem; }
+        .sensor-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; box-shadow: var(--shadow); display: flex; flex-direction: column; transition: transform 0.2s; }
+        .sensor-card:hover { transform: translateY(-5px); }
+        .sensor-img { display: block; width: 100%; height: auto; aspect-ratio: 1 / 1; object-fit: cover; border-radius: 8px; margin-bottom: 1rem; }
+        .sensor-card h3 { margin-top: 0; color: var(--accent); }
+        
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; }
+        .metric-card { background: #f8fafc; border: 1px solid var(--border); border-radius: 10px; padding: 1.5rem; text-align: center; }
+        .metric-value { font-size: 1.25rem; font-weight: 700; margin-top: 0.5rem; }
+        
+        .maint-row { display: flex; align-items: center; margin-bottom: 1rem; background: #f8fafc; padding: 1rem; border-radius: 8px; border: 1px solid var(--border); }
+        .maint-row .btn { min-width: 180px; margin-right: 1.5rem; }
+        .maint-desc { font-size: 0.9rem; color: var(--text-muted); line-height: 1.4; }
+
+        .db-table { width: 100%; border-collapse: collapse; text-align: left; margin-top: 1rem; }
+        .db-table th, .db-table td { padding: 12px; border-bottom: 1px solid var(--border); }
+        .db-table th { background: #f8fafc; color: var(--accent); }
+        
+        .btn { background: #f1f5f9; border: 1px solid var(--border); padding: 0.6rem 1rem; border-radius: 6px; cursor: pointer; font-weight: 600; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; }
+        .btn:hover { background: var(--accent); color: white; }
+        .btn-danger { background: #fee2e2; color: #dc2626; border-color: #fecaca; }
+        .btn-danger:hover { background: #dc2626; color: white; }
+        .recommendation-box { background: #e0f2fe; border: 1px solid #7dd3fc; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; }
+
+        .log-scroll { max-height: 24rem; overflow: auto; }
+        .log-scroll thead th { position: sticky; top: 0; }
+        .log-selection[hidden], .log-action[hidden] { display: none; }
+        @media print {
+            .log-scroll { max-height: none; overflow: visible; }
+            .log-scroll thead th { position: static; }
+            .log-selection { display: none !important; }
+            body { background: white; }
+            .navbar, .intro-box, .sensors-grid, #dashboard, #maintenance, .contact-box, .btn, .modal-overlay, #global-loader, #sleep-records-status, #records-status { display: none !important; }
+            #sleep > div:first-of-type, #sleep > h2 {display:none !important;}
+            .db-table {font-size:9pt;} .database-box {break-inside:auto;} tr {break-inside:avoid;}
+            .container { padding: 0; display: block; }
+            .database-box { border: none; box-shadow: none; margin: 0; padding: 0; }
+        }
+    @media(max-width:650px){.navbar{position:static;flex-wrap:wrap;padding:1rem}.nav-links{gap:.6rem;flex-wrap:wrap}.container{padding:2rem 1rem}h1{font-size:2.3rem}.maint-row{flex-direction:column;align-items:stretch;gap:1rem}.maint-row .btn{margin:0}.database-box{overflow-x:auto}.db-table th,.db-table td{padding:8px}.modal-box{padding:1.5rem;width:85%;max-width:320px}}
+</style>
+</head>
+<body>
+    <div id="global-loader">
+        <div class="spinner"></div>
+        <h2 id="loader-text" style="color: var(--text-main); font-weight: 700;">Initializing System...</h2>
+        <p style="color: var(--text-muted);">Please wait.</p>
+    </div>
+
+    <div id="login-overlay" class="modal-overlay">
+        <div class="modal-box fade-in">
+            <h2 style="color: var(--text-main);">Safety Homes</h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">Enter administrator credentials.</p>
+            <label>Username</label><input type="text" id="login-user" placeholder="Username">
+            <label>Password</label><input type="password" id="login-pass" placeholder="Password">
+            <button class="btn" style="width: 90%; margin-top: 0.5rem;" onclick="checkLogin()">Login</button>
+            <p id="login-error" style="color: #dc2626; display: none; font-size: 0.85rem; margin-top: 1rem;">Invalid credentials.</p>
+        </div>
+    </div>
+
+    <div id="settings-overlay" class="modal-overlay">
+        <div class="modal-box">
+            <h2 style="color: var(--text-main);">Admin Settings</h2>
+            <label>New Username</label><input type="text" id="new-user" placeholder="Enter new username">
+            <label>New Password</label><input type="password" id="new-pass" placeholder="Enter new password">
+            <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 1rem;">
+                <button class="btn" onclick="closeSettings()">Cancel</button>
+                <button class="btn btn-danger" onclick="saveSettings()">Save Changes</button>
+            </div>
+            <p id="settings-success" style="color: #16a34a; display: none; font-size: 0.85rem; margin-top: 1rem;">Credentials updated!</p>
+        </div>
+    </div>
+
+    <nav class="navbar fade-in">
+        <a href="#home" class="nav-logo">Safety Homes</a>
+        <ul class="nav-links">
+            <li><a href="#home">Home</a></li>
+            <li><a href="#dashboard">Dashboard</a></li>
+            <li><a href="#maintenance">Maintenance</a></li>
+            <li><a onclick="openSettings()">⚙️ Settings</a></li>
+            <li><a onclick="logout()">Logout</a></li>
+        </ul>
+    </nav>
+
+    <div class="container" id="main-content">
+        <div class="fade-in" id="home">
+            <h1>Safety Homes</h1>
+            <p class="tagline">Distributed embedded system with low-power architecture and automated environmental logging.</p>
+        </div>
+
+        <div class="sensors-grid fade-in delay-1" id="devices">
+            <div class="sensor-card">
+                <img class="sensor-img" src="dht22.jpeg" alt="DHT22 temperature sensor">
+                <h3>🌡️ Thermal & Climate</h3>
+                <p><strong>Component:</strong> DHT22 Sensor</p>
+                <p>Continuously monitors ambient temperature and humidity levels to prevent potential overheating.</p>
+            </div>
+            <div class="sensor-card">
+                <img class="sensor-img" src="mq2.jpg" alt="MQ-2 smoke sensor">
+                <h3>💨 Smoke & Gas Leak</h3>
+                <p><strong>Component:</strong> MQ-2 Sensor</p>
+                <p>Detects dangerous airborne pollutants or gas leaks early, immediately triggering local warnings.</p>
+            </div>
+            <div class="sensor-card">
+                <img class="sensor-img" src="hcsr04.jpg" alt="HC-SR04 ultrasonic sensor">
+                <h3>🚶 Intrusion Tracking</h3>
+                <p><strong>Component:</strong> HC-SR04 Ultrasonic</p>
+                <p>Monitors access points and physical boundary changes to secure the perimeter.</p>
+            </div>
+        </div>
+
+        <div class="dashboard-box fade-in delay-2" id="dashboard">
+            <h2>Sensor Dashboard</h2>
+            <p style="margin-bottom: 1.5rem;">System Status: <strong id="sys-status">WAITING</strong></p>
+            
+            <p id="connection-info">Waiting for ESP bridge...</p><p id="storage-info"></p><p>Last mode change: <span id="changed-at">Unknown</span></p><p id="command-result" role="status" aria-live="polite"></p>
+            <div class="recommendation-box">
+                <strong style="color: #0284c7;">System Recommendation:</strong> 
+                <span id="recommendation-text">Waiting for sensor data...</span>
+            </div>
+
+            <div class="dashboard-grid">
+                <div class="metric-card"><div style="font-size: 2rem;">🌡️</div><div class="metric-value" id="temp-val">Unavailable</div></div>
+                <div class="metric-card"><div>Humidity</div><div class="metric-value" id="humidity-val">Unavailable</div></div><div class="metric-card"><div>MQ-2 raw ADC</div><div class="metric-value" id="raw-val">Unavailable</div></div><div class="metric-card"><div>Smoke Fan</div><div class="metric-value" id="fan-val">Unavailable</div></div>
+                <div class="metric-card"><div style="font-size: 2rem;">🚶</div><div class="metric-value" id="intrusion-val">Unavailable</div></div>
+                <div class="metric-card"><div style="font-size: 2rem;">💨</div><div class="metric-value" id="smoke-val">Unavailable</div></div>
+            </div>
+
+
+        </div>
+
+        <div class="database-box fade-in delay-3" id="maintenance">
+            <h2>Maintenance Mode</h2>
+            <p style="margin-bottom: 1.5rem;">Engaging maintenance mode pauses automated operations for manual hardware diagnostics.</p>
+            
+            <div class="maint-row"><button class="btn" onclick="sendCommand('MAINTENANCE')">Enter Maintenance Mode</button><div class="maint-desc"><strong>Pause System:</strong> Halts the 3-minute auto-logging cycle and prepares the MCU to accept manual testing commands.</div></div>
+            <div class="maint-row"><button class="btn" data-maintenance-test disabled onclick="sendCommand('ACTUATOR_TOGGLE')">Toggle Buzzer</button><div class="maint-desc"><strong>Hardware Test:</strong> Tests the buzzer on D8. Enter MAINTENANCE first.</div></div>
+            <div class="maint-row"><button class="btn" data-maintenance-test disabled onclick="sendCommand('FAN_TOGGLE')">Toggle Fan</button><div class="maint-desc">Tests the fan on D3. Current fan state: <strong id="maintenance-fan">Unavailable</strong></div></div>
+            <div class="maint-row"><button class="btn" data-maintenance-test disabled onclick="sendCommand('MANUAL_READ')">Record Reading</button><div class="maint-desc">Takes one sensor reading and adds it to System Logs with the time the server received your button press.</div></div>
+            <div class="maint-row"><button class="btn" onclick="sendCommand('AUTO')">Return to AUTO</button><div class="maint-desc"><strong>Resume System:</strong> Exits maintenance mode and restarts the standard continuous monitoring and logging cycle.</div></div>
+
+            <p style="margin-top: 1.5rem;">Current Buzzer State: <strong id="actuator-val">Unavailable</strong></p>
+        </div>
+
+        <div class="database-box fade-in delay-4" id="sleep">
+            <h2>Sleep & Power Management</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <p style="margin:0;">Requests sensor power-off and AVR power-down; ESP stays awake. Q1 switches the DHT22 and ultrasonic sensor ground.</p>
+                <div style="display: flex; gap: 0.5rem;"><button class="btn btn-danger" onclick="sendCommand('SLEEP')">Activate Deep Sleep</button><button class="btn" onclick="sendCommand('WAKE')">Wake MCU</button></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 1.5rem;">
+                <h3 style="margin:0;">Sleep Duration Logs</h3>
+                <button class="btn btn-danger" onclick="clearSleepRecords(this)">Clear Sleep Records</button>
+            </div>
+            <p id="sleep-records-status" role="status"></p>
+            <table class="db-table"><thead><tr><th>ID</th><th>Sleep Start</th><th>Wake Time</th><th>Duration</th></tr></thead><tbody id="sleepTable"></tbody></table>
+        </div>
+
+        <div class="database-box fade-in delay-5" id="logs">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2 style="margin:0;">System Logs (3-Min Interval)</h2>
+                <div>
+                    <button class="btn" onclick="printLogs()">Print / Save PDF</button>
+                    <button id="delete-mode" class="btn" aria-pressed="false" onclick="toggleDeleteMode()">Delete Mode</button>
+                    <button id="delete-selected" class="btn btn-danger log-action" onclick="deleteSelected()" hidden disabled>Delete Selected</button>
+                    <button class="btn btn-danger" onclick="clearRecords(this)">Clear Records</button>
+                </div>
+            </div>
+            <p id="records-status" role="status"></p>
+            <div class="log-scroll" tabindex="0" role="region" aria-label="Scrollable system logs"><table class="db-table"><thead><tr><th id="selection-header" class="log-selection" hidden>Select</th><th>Timestamp</th><th>Temp (°C)</th><th>Distance</th><th>Smoke</th><th>Humidity</th><th>ADC</th><th>Time source</th><th>Mode</th></tr></thead><tbody id="historyTable"></tbody></table></div>
+        </div>
+
+        <div class="contact-box fade-in delay-5" id="contact">
+            <h2>Contact & Support</h2>
+            <p><strong>Email:</strong> safetyhome.home@gmail.com</p>
+            <p><strong>System Deployment:</strong> Pampanga State University (CpE 414)</p>
+        </div>
+    </div>
+
+    <script>
+        let authenticated = false;
+        const el = id => document.getElementById(id);
+        const formatTime = t => t ? new Date(t * 1000).toLocaleString() : 'Unknown';
+        const number = (v, unit='') => v === null || v === undefined ? 'Unavailable' : v + unit;
+        async function api(path, body) {
+            const response = await fetch(path, body === undefined ? {cache:'no-store', signal:path.startsWith('/api/data') ? AbortSignal.timeout(8000) : undefined} : {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+            const data = await response.json();
+            if(!response.ok) {
+                if(response.status === 401 && path !== '/api/login') { authenticated=false; el('login-overlay').style.display='flex'; }
+                throw new Error(data.error || 'Request failed');
+            }
+            return data;
+        }
+        window.addEventListener('load', () => {el('global-loader').style.display='none';el('login-overlay').style.display='flex';});
+        async function checkLogin() {
+            try {
+                await api('/api/login',{username:el('login-user').value,password:el('login-pass').value});
+                authenticated=true;el('login-error').style.display='none';el('login-overlay').style.display='none';el('main-content').style.display='block';el('login-pass').value='';
+                followTelemetry();await loadTables();
+            } catch(e) { el('login-error').textContent=e.message;el('login-error').style.display='block'; }
+        }
+        el('login-pass').addEventListener('keydown',event=>{if(event.key==='Enter')checkLogin();});
+        function openSettings(){el('settings-overlay').style.display='flex';}
+        function closeSettings(){el('settings-overlay').style.display='none';el('settings-success').style.display='none';}
+        async function saveSettings(){
+            try {await api('/api/credentials',{username:el('new-user').value,password:el('new-pass').value});el('new-pass').value='';el('settings-success').textContent='Credentials saved.';el('settings-success').style.display='block';}
+            catch(e){el('settings-success').textContent=e.message;el('settings-success').style.display='block';}
+        }
+        async function logout(){try{await api('/api/logout',{});}finally{authenticated=false;location.reload();}}
+        let followingTelemetry = false;
+        async function followTelemetry(){
+            if(followingTelemetry)return;
+            followingTelemetry=true;
+            let lastSeen=null;
+            try{
+                while(authenticated){
+                    const data=await fetchTelemetry(lastSeen);
+                    lastSeen=data ? data.last_seen??0 : null;
+                    if(!data && authenticated) await new Promise(resolve=>setTimeout(resolve,1000));
+                }
+            }finally{
+                followingTelemetry=false;
+            }
+        }
+        function renderSensorValues(data){
+            const readings=data?.readings_available ? data : {};
+            el('temp-val').textContent=number(readings.temperature,' °C');
+            el('humidity-val').textContent=number(readings.humidity,' %');
+            el('intrusion-val').textContent=number(readings.distance,' cm');
+            el('raw-val').textContent=number(readings.smoke_raw);
+            el('smoke-val').textContent=readings.smoke??'Unavailable';
+            el('actuator-val').textContent=readings.actuator??'Unavailable';
+            el('fan-val').textContent=readings.fan??'Unavailable';
+            el('maintenance-fan').textContent=readings.fan??'Unavailable';
+            document.querySelectorAll('[data-maintenance-test]').forEach(button=>{
+                button.disabled=!data?.readings_available || data.mode!=='MAINTENANCE';
+            });
+        }
+        async function fetchTelemetry(lastSeen=null){
+            if(!authenticated)return;
+            try {
+                const path=lastSeen===null ? '/api/data' : '/api/data?after='+encodeURIComponent(lastSeen);
+                const data=await api(path);
+                if(!authenticated)return;
+                renderSensorValues(data);
+                el('sys-status').textContent=(data.online?'':'LAST REPORTED: ')+data.mode+' / '+data.status;
+                el('sys-status').style.color=data.online&&data.mcu_online?'#16a34a':'#dc2626';
+                el('changed-at').textContent=formatTime(data.changed_at);
+                el('connection-info').textContent=data.online ? (data.mcu_online ? 'ESP bridge online. '+(data.mode==='SLEEP'?'Arduino reported sleep entry; live readings are unavailable.':'Arduino frames received recently.') : 'ESP online; Arduino frames are stale. Check UART, power, and firmware.') : 'ESP bridge offline or not configured. Last delivery: '+formatTime(data.last_seen);
+                el('storage-info').textContent='ESP storage: '+(data.storage_ok===undefined?'unknown':data.storage_ok?'ready':'FAILED')+'; queued: '+(data.queued_records??'unknown')+'/896; dropped: '+(data.dropped??0)+'; storage errors: '+(data.storage_errors??0)+'; recovered: '+(data.recovered??0)+'; UART CRC errors: '+(data.uart_errors??0)+'. Cloud: '+(data.cloud_configured?'configured':'NOT configured')+'; unsynced records: '+data.sync_pending+(data.cloud_error?' — '+data.cloud_error:'')+'. Last successful cloud write: '+formatTime(data.cloud_last_success);
+                let recommendation='Monitor readings and compare with your measured normal baseline.';
+                if(data.temperature!==null&&data.temperature>31)recommendation='High temperature: inspect ventilation.';
+                if(data.distance!==null&&data.distance>0&&data.distance<=10)recommendation='Object within 10 cm: inspect the monitored area.';
+                if(data.temperature===null||data.distance===null)recommendation='A sensor reading is unavailable. Check power and signal wiring.';
+                if(data.smoke==='Warming up')recommendation='MQ-2 warming up. Gas alarm is inhibited; readings are not calibrated ppm.';
+                if(data.smoke==='Detected!')recommendation='Gas/smoke threshold exceeded. Follow your lab safety procedure.';
+                if(data.mode==='MAINTENANCE')recommendation='Maintenance: automatic logging and output control pause. Use the test buttons.';
+                if(data.mode==='SLEEP')recommendation='Sleep reported: fan and live monitoring pause. Use Wake MCU to return to AUTO.';
+                if(!data.readings_available && (!data.online || data.mode!=='SLEEP'))recommendation='Live sensor data is unavailable. Check device power and the connection.';
+                el('recommendation-text').textContent=recommendation;
+                const last=data.commands?.[0];
+                if(!last && el('command-result').textContent.startsWith('Command #'))el('command-result').textContent='';
+                if(last)el('command-result').textContent='Command #'+last.id+' '+last.command+': '+last.state+(last.result?' — '+last.result:'');
+                return data;
+            }catch(e){
+                renderSensorValues(null);
+                el('connection-info').textContent='Server unavailable: '+e.message;
+                el('sys-status').textContent='SERVER OFFLINE';
+                el('sys-status').style.color='#dc2626';
+                el('recommendation-text').textContent='Live sensor data is unavailable.';
+            }
+        }
+        let deleteMode=false;
+        let deleting=false;
+        let historyRows=[];
+        const selectedReadings=new Set();
+        function updateDeleteButton(){
+            const button=el('delete-selected');
+            button.disabled=deleting || selectedReadings.size===0 || selectedReadings.size>100;
+            button.textContent=selectedReadings.size ? 'Delete Selected ('+selectedReadings.size+')' : 'Delete Selected';
+            if(selectedReadings.size>100)el('records-status').textContent='Select up to 100 readings at a time.';
+        }
+        function renderHistory(){
+            showRows('historyTable',historyRows,[1,2,3,4,5,6,7,8]);
+            updateDeleteButton();
+        }
+        function toggleDeleteMode(){
+            if(deleting)return;
+            deleteMode=!deleteMode;
+            selectedReadings.clear();
+            el('records-status').textContent='';
+            el('delete-mode').setAttribute('aria-pressed',String(deleteMode));
+            el('delete-mode').textContent=deleteMode?'Cancel Selection':'Delete Mode';
+            el('delete-selected').hidden=!deleteMode;
+            el('selection-header').hidden=!deleteMode;
+            if(deleteMode)el('records-status').textContent='Select up to 100 readings, then press Delete Selected.';
+            renderHistory();
+            if(!deleteMode)loadTables();
+        }
+        async function deleteSelected(){
+            if(deleting || !selectedReadings.size || selectedReadings.size>100)return;
+            const ids=[...selectedReadings];
+            if(!window.confirm('Delete '+ids.length+' selected readings from local System Logs?'))return;
+            deleting=true;
+            updateDeleteButton();
+            try{
+                const result=await api('/api/history/delete',{ids});
+                historyRows=historyRows.filter(row=>!selectedReadings.has(row[0]));
+                selectedReadings.clear();
+                renderHistory();
+                el('records-status').textContent='Deleted '+result.readings+' readings.';
+            }catch(e){
+                el('records-status').textContent=e.message;
+            }finally{
+                deleting=false;
+                updateDeleteButton();
+            }
+        }
+        function showRows(id, rows, columns){
+            const target=el(id);target.replaceChildren();
+            for(const row of [...rows].reverse()){
+                const tr=document.createElement('tr');
+                if(id==='historyTable' && deleteMode){
+                    const cell=tr.insertCell();
+                    cell.className='log-selection';
+                    const checkbox=document.createElement('input');
+                    checkbox.type='checkbox';
+                    checkbox.checked=selectedReadings.has(row[0]);
+                    checkbox.setAttribute('aria-label','Select reading at '+row[1]);
+                    checkbox.addEventListener('change',()=>{
+                        if(checkbox.checked)selectedReadings.add(row[0]);else selectedReadings.delete(row[0]);
+                        updateDeleteButton();
+                    });
+                    cell.appendChild(checkbox);
+                }
+                for(const column of columns){const td=document.createElement('td');td.textContent=row[column]??'Unavailable';tr.appendChild(td);}
+                target.appendChild(tr);
+            }
+        }
+        async function loadTables(){
+            if(!authenticated)return;
+            await Promise.all([
+                api('/api/history').then(history=>{
+                    if(!deleteMode){historyRows=history;renderHistory();}
+                }).catch(error=>{el('records-status').textContent='Cannot load System Logs: '+error.message;}),
+                api('/api/sleep_history').then(sleep=>{
+                    showRows('sleepTable',sleep,[0,1,2,3]);
+                }).catch(error=>{el('sleep-records-status').textContent='Cannot load sleep logs: '+error.message;})
+            ]);
+        }
+        async function clearSleepRecords(button){
+            if(!window.confirm('Clear completed local sleep records? Download your PDF first if you need a copy.'))return;
+            button.disabled=true;
+            try{
+                const cleared=await api('/api/clear',{target:'sleep'});
+                await loadTables();
+                el('sleep-records-status').textContent='Cleared '+cleared.sleeps+' completed sleep records.';
+            }catch(e){
+                el('sleep-records-status').textContent=e.message;
+            }finally{
+                button.disabled=false;
+            }
+        }
+        async function clearRecords(button){
+            if(!window.confirm('Clear local sensor logs, completed sleep records, and command history? Download your PDF first if you need a copy.'))return;
+            button.disabled=true;
+            try{
+                const cleared=await api('/api/clear',{});
+                if(deleteMode)toggleDeleteMode();
+                await loadTables();
+                el('records-status').textContent='Cleared '+cleared.readings+' readings, '+cleared.sleeps+' sleep logs, and '+cleared.commands+' command records.';
+            }catch(e){
+                el('records-status').textContent=e.message;
+            }finally{
+                button.disabled=false;
+            }
+        }
+        function printLogs(){
+            window.print();
+        }
+        async function sendCommand(command){
+            try{const result=await api('/api/command',{command});el('command-result').textContent='Command #'+result.id+' queued; waiting for Arduino acknowledgment.';setTimeout(loadTables,4000);}
+            catch(e){el('command-result').textContent=e.message;}
+        }
+        setInterval(loadTables,10000);
+    </script>
+</body>
+</html>
